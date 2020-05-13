@@ -6,6 +6,13 @@ import argparse
 import cv2
 import imutils
 import time
+import play_audio
+import asyncio
+
+
+# Flags that check wether or not to play a sound.
+flagA = True
+
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -98,6 +105,20 @@ while True:
     # show the frame to our screen
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(2) & 0xFF
+
+
+    #Sound code
+
+
+    if center is not None:
+        if center[0] <= frame.shape[1]-0 and center[0] >= frame.shape[1]-100 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagA == True:
+                flagA = False
+                play_audio.playA()
+        else:
+            flagA = True
+                
+
     #counter += 1
 
     # if the 'q' key is pressed, stop the loop
@@ -123,3 +144,5 @@ else:
 
 # close all windows
 cv2.destroyAllWindows()
+
+
