@@ -94,8 +94,7 @@ while True:
         if radius > 10:
             # draw the circle and centroid on the frame,
             # then update the list of tracked points
-            cv2.circle(frame, (int(x), int(y)), int(radius),
-                (0, 255, 255), 2)
+            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
         
