@@ -31,7 +31,7 @@ args = vars(ap.parse_args())
 # Color threshold in  HSV color space
 # Currently set to green-yellow
 #colorLower = (29, 86, 6)
-colorLower = (29, 40, 6)
+colorLower = (40, 40, 6)
 #colorUpper = (64, 255, 255)
 colorUpper = (100, 255, 255)
 
