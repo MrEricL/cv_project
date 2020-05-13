@@ -34,6 +34,7 @@ else:
 time.sleep(2.0)
 
 while True:
+
     # grab the current frame
     frame = vs.read()
 
@@ -85,7 +86,16 @@ while True:
                 (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
-    # show the frame to our screen and increment the frame counter
+        
+        # Draws rectangles
+        cv2.rectangle(frame, (frame.shape[1]-100, frame.shape[0]-100), (frame.shape[1]-0, frame.shape[0]-2), (0,0,255), 2)
+        cv2.rectangle(frame, (frame.shape[1]-102, frame.shape[0]-2), (frame.shape[1]-200, frame.shape[0]-100), (0,225,0), 2)
+        cv2.rectangle(frame, (frame.shape[1]-202, frame.shape[0]-2), (frame.shape[1]-300, frame.shape[0]-100), (225,0,0), 2)
+        cv2.rectangle(frame, (frame.shape[1]-302, frame.shape[0]-2), (frame.shape[1]-400, frame.shape[0]-100), (225,225,0), 2)
+        cv2.rectangle(frame, (frame.shape[1]-402, frame.shape[0]-2), (frame.shape[1]-500, frame.shape[0]-100), (0,225,225), 2)
+        cv2.rectangle(frame, (frame.shape[1]-502, frame.shape[0]-2), (frame.shape[1]-600, frame.shape[0]-100), (225,0,225), 2)
+
+    # show the frame to our screen
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
     #counter += 1
