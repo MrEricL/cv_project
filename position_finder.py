@@ -12,6 +12,11 @@ import asyncio
 
 # Flags that check wether or not to play a sound.
 flagA = True
+flagB = True
+flagC = True
+flagD = True
+flagE = True
+flagF = True
 
 
 # construct the argument parse and parse the arguments
@@ -104,7 +109,7 @@ while True:
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
-    key = cv2.waitKey(2) & 0xFF
+    key = cv2.waitKey(1) & 0xFF
 
 
     #Sound code
@@ -117,6 +122,41 @@ while True:
                 play_audio.playA()
         else:
             flagA = True
+        
+        if center[0] <= frame.shape[1]-102 and center[0] >= frame.shape[1]-200 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagB == True:
+                flagB = False
+                play_audio.playB()
+        else:
+            flagB = True
+
+        if center[0] <= frame.shape[1]-202 and center[0] >= frame.shape[1]-300 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagC == True:
+                flagC = False
+                play_audio.playC()
+        else:
+            flagC = True
+
+        if center[0] <= frame.shape[1]-302 and center[0] >= frame.shape[1]-400 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagD == True:
+                flagD = False
+                play_audio.playD()
+        else:
+            flagD = True
+        
+        if center[0] <= frame.shape[1]-402 and center[0] >= frame.shape[1]-500 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagE == True:
+                flagE = False
+                play_audio.playE()
+        else:
+            flagE = True
+
+        if center[0] <= frame.shape[1]-502 and center[0] >= frame.shape[1]-600 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
+            if flagF == True:
+                flagF = False
+                play_audio.playF()
+        else:
+            flagF = True
                 
 
     #counter += 1
