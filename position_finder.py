@@ -30,8 +30,10 @@ args = vars(ap.parse_args())
 # define the lower and upper boundaries of the "green"
 # Color threshold in  HSV color space
 # Currently set to green-yellow
-colorLower = (29, 86, 6)
-colorUpper = (64, 255, 255)
+#colorLower = (29, 86, 6)
+colorLower = (40, 40, 6)
+#colorUpper = (64, 255, 255)
+colorUpper = (100, 255, 255)
 
 # if a video path was not supplied, grab the reference
 # to the webcam
@@ -94,17 +96,17 @@ while True:
         if radius > 10:
             # draw the circle and centroid on the frame,
             # then update the list of tracked points
-            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
+            #cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
         
-        # Draws rectangles
-        cv2.rectangle(frame, (frame.shape[1]-100, frame.shape[0]-100), (frame.shape[1]-0, frame.shape[0]-2), (0,0,255), 2)
-        cv2.rectangle(frame, (frame.shape[1]-102, frame.shape[0]-2), (frame.shape[1]-200, frame.shape[0]-100), (0,225,0), 2)
-        cv2.rectangle(frame, (frame.shape[1]-202, frame.shape[0]-2), (frame.shape[1]-300, frame.shape[0]-100), (225,0,0), 2)
-        cv2.rectangle(frame, (frame.shape[1]-302, frame.shape[0]-2), (frame.shape[1]-400, frame.shape[0]-100), (225,225,0), 2)
-        cv2.rectangle(frame, (frame.shape[1]-402, frame.shape[0]-2), (frame.shape[1]-500, frame.shape[0]-100), (0,225,225), 2)
-        cv2.rectangle(frame, (frame.shape[1]-502, frame.shape[0]-2), (frame.shape[1]-600, frame.shape[0]-100), (225,0,225), 2)
+    # Draws rectangles
+    cv2.rectangle(frame, (frame.shape[1]-100, frame.shape[0]-100), (frame.shape[1]-0, frame.shape[0]-2), (0,0,255), 2)
+    cv2.rectangle(frame, (frame.shape[1]-102, frame.shape[0]-2), (frame.shape[1]-200, frame.shape[0]-100), (0,225,0), 2)
+    cv2.rectangle(frame, (frame.shape[1]-202, frame.shape[0]-2), (frame.shape[1]-300, frame.shape[0]-100), (225,0,0), 2)
+    cv2.rectangle(frame, (frame.shape[1]-302, frame.shape[0]-2), (frame.shape[1]-400, frame.shape[0]-100), (225,225,0), 2)
+    cv2.rectangle(frame, (frame.shape[1]-402, frame.shape[0]-2), (frame.shape[1]-500, frame.shape[0]-100), (0,225,225), 2)
+    cv2.rectangle(frame, (frame.shape[1]-502, frame.shape[0]-2), (frame.shape[1]-600, frame.shape[0]-100), (225,0,225), 2)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
