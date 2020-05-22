@@ -28,3 +28,11 @@ Put hand in the upper right box and make gestures when playing the air drums to 
 
 
 To explore the Kalman filter and One Eurofilter `cd kalman` and read the instructions. The code is completely modular but was not included to prevent it from being too messy.
+
+## Running the Gesture Recognition
+
+THere was two diffeernt approaches for gesture Recognition:
+
+Sking Recognition: When running you may press the `s` key enable skin Recognition. After your hand is in the box you can enable it so that it can start predicting the amount of fingers raised by pressing the `t` key to enable trigger mode.
+
+Background Subtraction: You first need to capture an image of the background whcih you can press the `s` key when your hand or and dynamic object isnt in the blue square grid on the top right of the video. After the background is capture you can put your hand in the box and enable it so the at it can start predicting fingercount by pressing `t` key to enable trigger mode. 
