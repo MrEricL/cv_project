@@ -1,1 +1,404 @@
-{}
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"roi",
+				"roiBox"
+			],
+			[
+				"windowN",
+				"windowName2"
+			],
+			[
+				"window",
+				"windowName2"
+			],
+			[
+				"kalman",
+				"kalman"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/C/Users/evanl/cvproj/kalman_test.py",
+			"settings":
+			{
+				"buffer_size": 7203,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "# USAGE\n# python track.py --video video/sample.mov\n\n# import the necessary packages\nimport numpy as np\nimport argparse\nimport cv2\n\n# initialize the current frame of the video, along with the list of\n# ROI points along with whether or not this is input mode\nframe = None\nroiPts = []\ninputMode = False\n\ndef center(points):\n    x = np.float32((points[0][0] + points[1][0] + points[2][0] + points[3][0]) / 4.0)\n    y = np.float32((points[0][1] + points[1][1] + points[2][1] + points[3][1]) / 4.0)\n    return np.array([np.float32(x), np.float32(y)], np.float32)\n\n\ndef selectROI(event, x, y, flags, param):\n\t# grab the reference to the current frame, list of ROI\n\t# points and whether or not it is ROI selection mode\n\tglobal frame, roiPts, inputMode\n\n\t# select the ROI if less than four points\n\tif inputMode and event == cv2.EVENT_LBUTTONDOWN and len(roiPts) < 4:\n\t\troiPts.append((x, y))\n\t\tcv2.circle(frame, (x, y), 4, (0, 255, 0), 2)\n\t\tcv2.imshow(\"frame\", frame)\n\ndef main():\n\t#init Kalman\n\tkalman = cv2.KalmanFilter(4,2)\n\n\tdt = 1 #step interval\n\tkalman.measurementMatrix = np.array([[1,0,0,0],\n\t                                     [0,1,0,0]],np.float32)\n\n\tkalman.transitionMatrix = np.array([[1,0,dt,0],\n\t                                    [0,1,0,dt],\n\t                                    [0,0,1,0],\n\t                                    [0,0,0,1]],np.float32)\n\n\tkalman.processNoiseCov = np.array([[1,0,0,0],\n\t                                   [0,1,0,0],\n\t                                   [0,0,1,0],\n\t                                   [0,0,0,1]],np.float32) * 0.01 #smoothing\n\n\tf = 0.1845 #from paper\n\tkalman.measurementNoiseCov = np.array([[f,f/40],\n\t                                       [f/40,f/4]],np.float32)\n\n\tprediction = np.zeros((4,1), np.float32)\n\n\n\t# construct the argument parse and parse the arguments\n\tap = argparse.ArgumentParser()\n\tap.add_argument(\"-v\", \"--video\",\n\t\thelp = \"path to the (optional) video file\")\n\targs = vars(ap.parse_args())\n\n\t# grab the reference to the current frame, list of ROI\n\t# points and whether or not it is ROI selection mode\n\tglobal frame, roiPts, inputMode\n\n\t# if the video path was not supplied, grab the reference to the\n\t# camera\n\tif not args.get(\"video\", False):\n\t\tcamera = cv2.VideoCapture(0)\n\n\t# otherwise, load the video\n\telse:\n\t\tcamera = cv2.VideoCapture(args[\"video\"])\n\n\t# setup the mouse callback\n\tcv2.namedWindow(\"frame\", cv2.WINDOW_NORMAL)\n\tcv2.setMouseCallback(\"frame\", selectROI)\n\n\t# initialize the termination criteria for cam shift, indicating\n\t# a maximum of ten iterations or movement by a least one pixel\n\t# along with the bounding box of the ROI\n\ttermination = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)\n\troiBox = None\n\n\t# keep looping over the frames\n\twhile True:\n\t\t# grab the current frame\n\t\t(grabbed, frame) = camera.read()\n\n\t\t# check to see if we have reached the end of the\n\t\t# video\n\t\tif not grabbed:\n\t\t\tbreak\n\n\t\t# if the see if the ROI has been computed\n\t\tif roiBox is not None:\n\t\t\t# convert the current frame to the HSV color space\n\t\t\t# and perform mean shift\n\t\t\thsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)\n\t\t\tbackProj = cv2.calcBackProject([hsv], [0], roiHist, [0, 180], 1)\n\n\t\t\t# apply cam shift to the back projection, convert the\n\t\t\t# points to a bounding box, and then draw them\n\t\t\t(r, roiBox) = cv2.CamShift(backProj, roiBox, termination)\n\t\t\tpts = np.int0(cv2.boxPoints(r))\n\t\t\t#cv2.polylines(frame, [pts], True, (0, 255, 0), 2)\n\n\t\t\tprint(r)\n\t\t\tprint(roiBox)\n\t\t\tprint(type(pts))\n\t\t\tprint(type([pts]))\n\n\n\t\t\t# draw observation on image - in BLUE\n\t\t\tx,y,w,h = roiBox\n\t\t\tframe = cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0),2)\n\n\t\t\t# extract center of this observation as points\n\n\t\t\tpts = cv2.boxPoints(r)\n\t\t\tpts = np.int0(pts)\n\t\t\t# (cx, cy), radius = cv2.minEnclosingCircle(pts)\n\n\t\t\t# use to correct kalman filter\n\t\t\tkalman.correct(center(pts))\n\n\t\t\t# get new kalman filter prediction\n\t\t\t# print(prediction, \"\\n\")\n\n\t\t\tprediction = kalman.predict()\n\n\t\t\t#cv2.polylines(frame, list(prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), True, (255, 0, 0), 2)\n\t\t\t# draw predicton on image - in GREEN\n\t\t\tframe = cv2.rectangle(frame, (prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), (255,0,0),2)\n\n\n\t\t# show the frame and record if the user presses a key\n\t\tcv2.imshow(\"frame\", frame)\n\t\tkey = cv2.waitKey(1) & 0xFF\n\n\t\t# handle if the 'i' key is pressed, then go into ROI\n\t\t# selection mode\n\t\tif key == ord(\"i\") and len(roiPts) < 4:\n\t\t\t# indicate that we are in input mode and clone the\n\t\t\t# frame\n\t\t\tinputMode = True\n\t\t\torig = frame.copy()\n\n\t\t\t# keep looping until 4 reference ROI points have\n\t\t\t# been selected; press any key to exit ROI selction\n\t\t\t# mode once 4 points have been selected\n\t\t\twhile len(roiPts) < 4:\n\t\t\t\tcv2.imshow(\"frame\", frame)\n\t\t\t\tcv2.waitKey(0)\n\n\t\t\t# determine the top-left and bottom-right points\n\t\t\troiPts = np.array(roiPts)\n\t\t\ts = roiPts.sum(axis = 1)\n\t\t\ttl = roiPts[np.argmin(s)]\n\t\t\tbr = roiPts[np.argmax(s)]\n\n\t\t\t# grab the ROI for the bounding box and convert it\n\t\t\t# to the HSV color space\n\t\t\troi = orig[tl[1]:br[1], tl[0]:br[0]]\n\t\t\troi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)\n\t\t\t#roi = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB)\n\n\t\t\t# compute a HSV histogram for the ROI and store the\n\t\t\t# bounding box\n\t\t\troiHist = cv2.calcHist([roi], [0], None, [16], [0, 180])\n\t\t\troiHist = cv2.normalize(roiHist, roiHist, 0, 255, cv2.NORM_MINMAX)\n\t\t\troiBox = (tl[0], tl[1], br[0], br[1])\n\n\t\t# if the 'q' key is pressed, stop the loop\n\t\telif key == ord(\"q\"):\n\t\t\tbreak\n\n\t# cleanup the camera and close any open windows\n\tcamera.release()\n\tcv2.destroyAllWindows()\n\nif __name__ == \"__main__\":\n\tmain()",
+			"file": "/C/Users/evanl/cvproj/track.py",
+			"file_size": 5670,
+			"file_write_time": 132339628292575281,
+			"settings":
+			{
+				"buffer_size": 5670,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/C/Users/evanl/cvproj/kalman.py",
+			"settings":
+			{
+				"buffer_size": 2023,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "#!/usr/bin/env python\n\"\"\"\n   Tracking of rotating point.\n   Rotation speed is constant.\n   Both state and measurements vectors are 1D (a point angle),\n   Measurement is the real point angle + gaussian noise.\n   The real and the estimated points are connected with yellow line segment,\n   the real and the measured points are connected with red line segment.\n   (if Kalman filter works correctly,\n    the yellow segment should be shorter than the red one).\n   Pressing any key (except ESC) will reset the tracking with a different speed.\n   Pressing ESC will stop the program.\n\"\"\"\n# Python 2/3 compatibility\nimport sys\nPY3 = sys.version_info[0] == 3\n\nif PY3:\n    long = int\n\nimport cv2\nfrom math import cos, sin, sqrt\nimport numpy as np\n\nif __name__ == \"__main__\":\n\n    img_height = 500\n    img_width = 500\n    kalman = cv2.KalmanFilter(2, 1, 0)\n\n    code = long(-1)\n\n    cv2.namedWindow(\"Kalman\")\n\n    while True:\n        state = 0.1 * np.random.randn(2, 1)\n\n        kalman.transitionMatrix = np.array([[1., 1.], [0., 1.]])\n        kalman.measurementMatrix = 1. * np.ones((1, 2))\n        kalman.processNoiseCov = 1e-5 * np.eye(2)\n        kalman.measurementNoiseCov = 1e-1 * np.ones((1, 1))\n        kalman.errorCovPost = 1. * np.ones((2, 2))\n        kalman.statePost = 0.1 * np.random.randn(2, 1)\n\n        while True:\n            def calc_point(angle):\n                return (np.around(img_width/2 + img_width/3*cos(angle), 0).astype(int),\n                        np.around(img_height/2 - img_width/3*sin(angle), 1).astype(int))\n\n            state_angle = state[0, 0]\n            state_pt = calc_point(state_angle)\n\n            prediction = kalman.predict()\n            predict_angle = prediction[0, 0]\n            predict_pt = calc_point(predict_angle)\n\n            measurement = kalman.measurementNoiseCov * np.random.randn(1, 1)\n\n            # generate measurement\n            measurement = np.dot(kalman.measurementMatrix, state) + measurement\n\n            measurement_angle = measurement[0, 0]\n            measurement_pt = calc_point(measurement_angle)\n\n            # plot points\n            def draw_cross(center, color, d):\n                cv2.line(img,\n                         (center[0] - d, center[1] - d), (center[0] + d, center[1] + d),\n                         color, 1, cv2.LINE_AA, 0)\n                cv2.line(img,\n                         (center[0] + d, center[1] - d), (center[0] - d, center[1] + d),\n                         color, 1, cv2.LINE_AA, 0)\n\n            img = np.zeros((img_height, img_width, 3), np.uint8)\n            draw_cross(np.int32(state_pt), (255, 255, 255), 3)\n            draw_cross(np.int32(measurement_pt), (0, 0, 255), 3)\n            draw_cross(np.int32(predict_pt), (0, 255, 0), 3)\n\n            cv2.line(img, state_pt, measurement_pt, (0, 0, 255), 3, cv2.LINE_AA, 0)\n            cv2.line(img, state_pt, predict_pt, (0, 255, 255), 3, cv2.LINE_AA, 0)\n\n            kalman.correct(measurement)\n\n            process_noise = sqrt(kalman.processNoiseCov[0,0]) * np.random.randn(2, 1)\n            state = np.dot(kalman.transitionMatrix, state) + process_noise\n\n            cv2.imshow(\"Kalman\", img)\n\n            code = cv2.waitKey(100)\n            if code != -1:\n                break\n\n        if code in [27, ord('q'), ord('Q')]:\n            break\n\n    cv2.destroyWindow(\"Kalman\")",
+			"file": "/C/Users/evanl/cvproj/kalman_third.py",
+			"file_size": 3412,
+			"file_write_time": 132339589173311034,
+			"settings":
+			{
+				"buffer_size": 3317,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "Packages/Python/Python.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"venv",
+				"Virtualenv: New"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"package",
+				"Install Package Control"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Users/evanl/cvproj",
+		"/C/Users/evanl/cvproj/cv_project"
+	],
+	"file_history":
+	[
+		"/C/Users/evanl/cvproj/roi.py",
+		"/C/Users/evanl/cvproj/cv_project/position_finder.sublime-project"
+	],
+	"find":
+	{
+		"height": 39.0
+	},
+	"find_in_files":
+	{
+		"height": 101.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"0, 255",
+			"0, 255'",
+			"center",
+			"cv.",
+			"term",
+			"keep",
+			"cropped",
+			"selection_",
+			"'marking'",
+			"measurement",
+			"measurements",
+			"kalman",
+			"prediction",
+			"kalman",
+			"measurement",
+			"frame",
+			"rescale",
+			"crop",
+			"isopened",
+			"crop",
+			"blue",
+			"videocap"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"windowName2"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/C/Users/evanl/cvproj/kalman_test.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7203,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								857,
+								857
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/C/Users/evanl/cvproj/track.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5670,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								743,
+								743
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/C/Users/evanl/cvproj/kalman.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2023,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2023,
+								2023
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 809.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/C/Users/evanl/cvproj/kalman_third.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3317,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3317,
+								3317
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 378.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 27.0
+	},
+	"input":
+	{
+		"height": 39.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 126.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Packages/Virtualenv/Python + Virtualenv.sublime-build",
+	"project": "position_finder.sublime-project",
+	"replace":
+	{
+		"height": 50.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 295.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

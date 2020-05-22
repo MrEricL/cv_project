@@ -5,13 +5,36 @@
 import numpy as np
 import argparse
 import cv2
+from OneEuro import OneEuroFilter
 
 # initialize the current frame of the video, along with the list of
-# ROI points along with whether or not this is input mode
+# camshift use
 frame = None
 roiPts = []
 inputMode = False
 
+
+
+#euro filter variables
+freq = 120 # not needed since using opencv
+min_cutoff = 0.05
+beta = 1
+dcutoff = 1
+
+# one euro filter
+def oef(x_cor, y_cor, t):
+	#normalize
+	width=frame.shape[1]
+	height=frame.shape[0]
+
+	retx = x_euro.filter(x_cor/width, t)
+	rety = y_euro.filter(y_cor/height, t)
+
+	return (retx*width, rety*height)
+
+
+
+# helper functions
 def center(points):
     x = np.float32((points[0][0] + points[1][0] + points[2][0] + points[3][0]) / 4.0)
     y = np.float32((points[0][1] + points[1][1] + points[2][1] + points[3][1]) / 4.0)
@@ -28,6 +51,9 @@ def selectROI(event, x, y, flags, param):
 		roiPts.append((x, y))
 		cv2.circle(frame, (x, y), 4, (0, 255, 0), 2)
 		cv2.imshow("frame", frame)
+
+
+
 
 def main():
 	#init Kalman
@@ -93,8 +119,29 @@ def main():
 		if not grabbed:
 			break
 
+
+		global x_euro
+		global y_euro
+
+		x_euro = OneEuroFilter(
+		    0, 0,
+		    min_cutoff=min_cutoff,
+		    beta=beta
+		)
+
+		y_euro = OneEuroFilter(
+		    0, 0,
+		    min_cutoff=min_cutoff,
+		    beta=beta
+		)
+
+
+
 		# if the see if the ROI has been computed
 		if roiBox is not None:
+			start = cv2.getTickCount()
+
+
 			# convert the current frame to the HSV color space
 			# and perform mean shift
 			hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -104,15 +151,17 @@ def main():
 			# points to a bounding box, and then draw them
 			(r, roiBox) = cv2.CamShift(backProj, roiBox, termination)
 			pts = np.int0(cv2.boxPoints(r))
-			#cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
 
-			print(r)
-			print(roiBox)
-			print(type(pts))
-			print(type([pts]))
+			#poly line drawing in YELLOW
+			cv2.polylines(frame, [pts], True, (0, 255, 255), 2)
+
+			# print(r)
+			# print(roiBox)
+			# print(type(pts))
+			# print(type([pts]))
 
 
-			# draw observation on image - in BLUE
+			# draw observation on image - in GREEN
 			x,y,w,h = roiBox
 			frame = cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0),2)
 
@@ -120,18 +169,27 @@ def main():
 
 			pts = cv2.boxPoints(r)
 			pts = np.int0(pts)
-			# (cx, cy), radius = cv2.minEnclosingCircle(pts)
+
+			ctr = center(pts)
+
+			print(ctr)
+
+
+			# one eurofilter
+			time = (cv2.getTickCount()-start)/cv2.getTickFrequency()*50
+			evals = oef(ctr[0], ctr[1], time)
+
+			print(evals)
+			frame = cv2.rectangle(frame, (int(evals[0]),int(evals[1])), (x+int(w*1),y+int(h*1)), (0,0,0),2)
 
 			# use to correct kalman filter
-			kalman.correct(center(pts))
-
 			# get new kalman filter prediction
-			# print(prediction, "\n")
+			kalman.correct(ctr)
 
 			prediction = kalman.predict()
 
 			#cv2.polylines(frame, list(prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), True, (255, 0, 0), 2)
-			# draw predicton on image - in GREEN
+			# draw predicton on image - in BLUE
 			frame = cv2.rectangle(frame, (prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), (255,0,0),2)
 
 
