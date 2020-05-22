@@ -13,3 +13,5 @@ To run with a webcam simply do `python3 ./position_finder.py` and please allow a
 To run with a video do `python3 ./position_finder.py --video [video_path]`
 
 When running you may press the `Q` key to quit.
+
+Put hand in the upper right box and make gestures when playing the air drums to modulate the sound made.
