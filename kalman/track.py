@@ -1,25 +1,48 @@
 # USAGE
-# python track.py --video video/sample.mov
+# python track.py --v test.mov
 
-# import the necessary packages
 import numpy as np
 import argparse
 import cv2
 from OneEuro import OneEuroFilter
 
-# initialize the current frame of the video, along with the list of
-# camshift use
-frame = None
-roiPts = []
-inputMode = False
+#which filter========================================================
+camshift1_on = True
+camshift2_on = True
+kalman_on = True
+euro_on = True
+
+#kalman settings========================================================
+kalman = cv2.KalmanFilter(4,2)
+dt = 1 #step interval
+kalman.measurementMatrix = np.array([[1,0,0,0],
+                                     [0,1,0,0]],np.float32)
+
+kalman.transitionMatrix = np.array([[1,0,dt,0],
+                                    [0,1,0,dt],
+                                    [0,0,1,0],
+                                    [0,0,0,1]],np.float32)
+
+kalman.processNoiseCov = np.array([[1,0,0,0],
+                                   [0,1,0,0],
+                                   [0,0,1,0],
+                                   [0,0,0,1]],np.float32) * 0.01 #smoothing
+
+f = 0.1845 #from paper
+kalman.measurementNoiseCov = np.array([[f,f/40],
+                                       [f/40,f/4]],np.float32)
+prediction = np.zeros((4,1), np.float32)
 
 
 
-#euro filter variables
-freq = 120 # not needed since using opencv
-min_cutoff = 0.05
-beta = 1
-dcutoff = 1
+#euro filter variables========================================================
+freq = 120 			# frequency not needed since using opencv
+min_cutoff = 0.05 	# the minimum cutoff rate
+beta = 1		 	# used for minimizing lag
+
+
+
+#helper functions========================================================
 
 # one euro filter
 def oef(x_cor, y_cor, t):
@@ -33,7 +56,11 @@ def oef(x_cor, y_cor, t):
 	return (retx*width, rety*height)
 
 
-
+# initialize the current frame of the video, along with the list of
+# camshift use
+frame = None
+roiPts = []
+inputMode = False
 # helper functions
 def center(points):
     x = np.float32((points[0][0] + points[1][0] + points[2][0] + points[3][0]) / 4.0)
@@ -54,31 +81,9 @@ def selectROI(event, x, y, flags, param):
 
 
 
+#start============================================================================
 
 def main():
-	#init Kalman
-	kalman = cv2.KalmanFilter(4,2)
-
-	dt = 1 #step interval
-	kalman.measurementMatrix = np.array([[1,0,0,0],
-	                                     [0,1,0,0]],np.float32)
-
-	kalman.transitionMatrix = np.array([[1,0,dt,0],
-	                                    [0,1,0,dt],
-	                                    [0,0,1,0],
-	                                    [0,0,0,1]],np.float32)
-
-	kalman.processNoiseCov = np.array([[1,0,0,0],
-	                                   [0,1,0,0],
-	                                   [0,0,1,0],
-	                                   [0,0,0,1]],np.float32) * 0.01 #smoothing
-
-	f = 0.1845 #from paper
-	kalman.measurementNoiseCov = np.array([[f,f/40],
-	                                       [f/40,f/4]],np.float32)
-
-	prediction = np.zeros((4,1), np.float32)
-
 
 	# construct the argument parse and parse the arguments
 	ap = argparse.ArgumentParser()
@@ -153,44 +158,35 @@ def main():
 			pts = np.int0(cv2.boxPoints(r))
 
 			#poly line drawing in YELLOW
-			cv2.polylines(frame, [pts], True, (0, 255, 255), 2)
-
-			# print(r)
-			# print(roiBox)
-			# print(type(pts))
-			# print(type([pts]))
+			if camshift2_on:
+				cv2.polylines(frame, [pts], True, (0, 255, 255), 2)
 
 
 			# draw observation on image - in GREEN
 			x,y,w,h = roiBox
-			frame = cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0),2)
+			if camshift1_on:
+				frame = cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0),2)
 
 			# extract center of this observation as points
-
 			pts = cv2.boxPoints(r)
 			pts = np.int0(pts)
-
 			ctr = center(pts)
 
-			print(ctr)
 
-
-			# one eurofilter
+			# one eurofilter - in BLACK
 			time = (cv2.getTickCount()-start)/cv2.getTickFrequency()*50
 			evals = oef(ctr[0], ctr[1], time)
-
-			print(evals)
-			frame = cv2.rectangle(frame, (int(evals[0]),int(evals[1])), (x+int(w*1),y+int(h*1)), (0,0,0),2)
+			if euro_on:
+				frame = cv2.rectangle(frame, (int(evals[0]),int(evals[1])), (x+int(w*1),y+int(h*1)), (0,0,0),2)
 
 			# use to correct kalman filter
 			# get new kalman filter prediction
 			kalman.correct(ctr)
-
 			prediction = kalman.predict()
 
-			#cv2.polylines(frame, list(prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), True, (255, 0, 0), 2)
 			# draw predicton on image - in BLUE
-			frame = cv2.rectangle(frame, (prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), (255,0,0),2)
+			if kalman_on:
+				frame = cv2.rectangle(frame, (prediction[0]-(0.5*w),prediction[1]-(0.5*h)), (prediction[0]+(0.5*w),prediction[1]+(0.5*h)), (255,0,0),2)
 
 
 		# show the frame and record if the user presses a key
