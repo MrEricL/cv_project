@@ -39,3 +39,5 @@ The Camshift algorithm is sourced from Adrian Roseback's [blog](pyimagesearch.co
 
 The Kalman filter was based off this paper from the [Navy](https://www.nrl.navy.mil/itd/imda/sites/www.nrl.navy.mil.itd.imda/files/pdfs/cp_GESTURE03.pdf) and this university research [paper](https://www.researchgate.net/publication/221230574_Hand_gesture_tracking_system_using_Adaptive_Kalman_Filter).
 
+The One Euro filter was based off this university research [paper](https://hal.inria.fr/hal-00670496/document).
+
