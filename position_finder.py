@@ -7,6 +7,7 @@ import cv2
 import imutils
 import time
 import asyncio
+import play_audio2 as play_audio
 
 
 # Flags that check wether or not to play a sound.
@@ -256,42 +257,42 @@ while True:
         if center[0] <= frame.shape[1]-0 and center[0] >= frame.shape[1]-100 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagA == True:
                 flagA = False
-                play_audio.playA()
+                play_audio.playA(fingerCount)
         else:
             flagA = True
 
         if center[0] <= frame.shape[1]-102 and center[0] >= frame.shape[1]-200 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagB == True:
                 flagB = False
-                play_audio.playB()
+                play_audio.playB(fingerCount)
         else:
             flagB = True
 
         if center[0] <= frame.shape[1]-202 and center[0] >= frame.shape[1]-300 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagC == True:
                 flagC = False
-                play_audio.playC()
+                play_audio.playC(fingerCount)
         else:
             flagC = True
 
         if center[0] <= frame.shape[1]-302 and center[0] >= frame.shape[1]-400 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagD == True:
                 flagD = False
-                play_audio.playD()
+                play_audio.playD(fingerCount)
         else:
             flagD = True
 
         if center[0] <= frame.shape[1]-402 and center[0] >= frame.shape[1]-500 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagE == True:
                 flagE = False
-                play_audio.playE()
+                play_audio.playE(fingerCount)
         else:
             flagE = True
 
         if center[0] <= frame.shape[1]-502 and center[0] >= frame.shape[1]-600 and center[1] <= frame.shape[0]-2 and center[1] >= frame.shape[0]-100:
             if flagF == True:
                 flagF = False
-                play_audio.playF()
+                play_audio.playF(fingerCount)
         else:
             flagF = True
                 
